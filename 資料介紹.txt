@@ -86,3 +86,18 @@ Vitis-AI 部署:
 模型分享：
 
 hubconf.py 讓其他人可以輕鬆地透過 PyTorch Hub 使用你的模型。
+
+
+
+
+使用train.py
+
+
+(y7-kv260-4070) aero602@aero602-asus-fx507zi4:~/final-ca3-y7/yolov7/yolov7$ python train.py     --workers 10     --device 0     --batch-size 1     --data data/albert_data.yaml     --img 640 640     --cfg cfg/training/yolov7.yaml     --weights ''     --name yolov7_custom_training_b6_e50     --hyp data/hyp.scratch.p5.yaml     --epochs 20
+python test_nndct.py     --data data/albert_data-q.yaml     --img 640     --batch 1     --conf 0.001     --iou 0.65     --device cpu     --weights runs/train/yolov7_custom_training_b6_e504/weights/best.pt     --name yolov7_640_val     --quant_mode calib     --nndct_convert_sigmoid_to_hsigmoid     --nndct_convert_silu_to_hswish
+python test_nndct.py     --data data/albert_data.yaml     --img 640     --batch 1     --conf 0.001     --iou 0.65     --device cpu     --weights runs/train/yolov7_custom_training_b6_e504/weights/best.pt     --name yolov7_640_val_quantized     --quant_mode test     --nndct_convert_sigmoid_to_hsigmoid     --nndct_convert_silu_to_hswish
+vai_c_xir \
+    --xmodel      /workspace/y7/nndct/Model_0_int.xmodel \
+    --arch        /opt/vitis_ai/compiler/arch/DPUCZDX8G/KV260/arch.json \
+    --output_dir  /workspace/y7/compiled_model \
+    --net_name    yolov7_kv260

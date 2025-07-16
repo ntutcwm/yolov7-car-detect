@@ -85,3 +85,8 @@ bash
 
 
 我已經將完整的流程和對應的指令都列出來了。
+
+
+python test_nndct.py     --data data/albert_data-q.yaml     --img 640     --batch-size 20     --conf 0.001     --iou 0.65     --device cpu     --weights runs/train/yolov7_custom_training_b6_e504/weights/best.pt     --name yolov7_640_val     --quant_mode calib     --nndct_convert_sigmoid_to_hsigmoid     --nndct_convert_silu_to_hswish
+
+docker run -it --gpus all --shm-size=20g -v /path/to/your/final-ca3-y7:/workspace/final-ca3-y7 --name y7-quant-env va3-y7-official:latest
