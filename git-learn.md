@@ -100,3 +100,36 @@ git push --force origin master
 ```
 
 執行此指令後，您的專案應該已成功上傳到 GitHub，且不再包含那些大檔案。
+
+## 步驟 6：使用分支 (Branching)
+
+在 Git 中，分支是一個非常強大的功能。它讓您可以從主要程式碼 (`master` 分支) 分出一個獨立的開發線，來開發新功能或修復問題，而不會影響到 `master` 分支的穩定性。
+
+### 6.1 建立與切換分支
+
+若要建立一個名為 `new-feature` 的新分支並馬上開始在這個分支上工作，最快的方法是：
+
+```bash
+git checkout -b new-feature
+```
+*   這個指令是 `git branch new-feature` (建立分支) 和 `git checkout new-feature` (切換到該分支) 這兩個指令的縮寫，非常方便。
+
+現在，您在這個 `new-feature` 分支上所做的任何 `commit` 都會被記錄在這個分支上，而不會影響到 `master` 分支。
+
+### 6.2 推送到指定分支
+
+當您在 `new-feature` 分支上完成了一些變更並 `commit` 之後，您會想要將這個新分支推送到遠端的 GitHub 儲存庫，讓其他人也能看到或進行協作。
+
+```bash
+git push origin new-feature
+```
+*   這個指令明確地告訴 Git：「將我本地的 `new-feature` 分支，推送到名為 `origin` 的遠端儲存庫上。」
+*   如果遠端儲存庫上還沒有 `new-feature` 這個分支，Git 會自動幫您建立一個。
+
+**小提示：** 第一次推送一個新分支時，您可以使用 `-u` 或 `--set-upstream` 選項：
+
+```bash
+git push -u origin new-feature
+```
+*   `-u` 選項會設定一個「追蹤」關係，將您本地的 `new-feature` 分支與遠端的 `origin/new-feature` 分支連結起來。
+*   這樣設定之後，未來當您還在這個分支上工作時，您只需要簡單地輸入 `git push`，Git 就會知道您要推送到 `origin/new-feature`，而不需要每次都指定完整的指令。
