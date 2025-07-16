@@ -1,0 +1,198 @@
+修改程式碼，讓 pytorch_nndct 這個量化專用的套件只在真正需要時才被載入，這樣就不會影響到您單純執行標準訓練的流程。
+
+我將修改 utils/torch_utils.py 這個檔案。修改的邏輯如下：
+
+在檔案開頭，我會加入一個 try...except 區塊。它會嘗試導入 pytorch_nndct。如果成功，就設定一個全域旗標 (flag) 表示「量化功能可用」；如果失敗（即您尚未安裝），它會優雅地跳過，並將旗標設為「不可用」。
+接著，在 utils/torch_utils.py 中那些真正使用到量化功能的類別和函式（如 NNDctModel）內部，我會加入一個檢查。在執行前，它會先確認第一步設定的旗標。
+如果旗標為「不可用」，程式會立刻停止並給出一個明確的錯誤訊息，告訴您需要安裝 pytorch_nndct 才能使用該特定功能。
+
+```
+<<<<<<< SEARCH
+logger = logging.getLogger(__name__)
+
+
+@contextmanager
+=======
+logger = logging.getLogger(__name__)
+
+try:
+    from pytorch_nndct.apis import torch_quantizer
+    from pytorch_nndct.nn import QuantStub, DeQuantStub
+    from pytorch_nndct import QatProcessor
+    NNDCT_AVAILABLE = True
+except ImportError:
+    NNDCT_AVAILABLE = False
+
+
+@contextmanager
+>>>>>>> REPLACE
+```
+    
+
+
+```
+<<<<<<< SEARCH
+    def __init__(self, m, nl):
+        super(NNDctDetect, self).__init__()
+        self.m = m
+        self.nl = nl
+        from pytorch_nndct.nn import QuantStub, DeQuantStub
+        dequant = []
+        for i in range(self.nl):
+            dequant.append(DeQuantStub())
+        self.dequant = nn.ModuleList(dequant)
+=======
+    def __init__(self, m, nl):
+        super(NNDctDetect, self).__init__()
+        if not NNDCT_AVAILABLE:
+            raise ModuleNotFoundError("pytorch_nndct is not installed. Please install it to use NNDctDetect.")
+        self.m = m
+        self.nl = nl
+        dequant = []
+        for i in range(self.nl):
+            dequant.append(DeQuantStub())
+        self.dequant = nn.ModuleList(dequant)
+>>>>>>> REPLACE
+```
+    
+
+
+```
+<<<<<<< SEARCH
+    def __init__(self, model=None, device=None, img_size=(640,640), nndct_bitwidth=8, output_dir='nndct'): 
+        super(NNDctModel, self).__init__()
+        model = deepcopy(model)
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--quant_mode', default='calib', choices=['float', 'calib', 'test'], help='quant mode')
+        parser.add_argument('--dump_model', action='store_true', help='dump model')
+        opt, _ = parser.parse_known_args()
+        self.quant_mode = opt.quant_mode
+        self.dump_model = opt.dump_model
+        if self.dump_model:
+            if self.quant_mode != 'test':
+                raise ValueError
+        from models.yolo import Detect, IDetect, IAuxDetect, IKeypoint, IBin
+        from pytorch_nndct.apis import torch_quantizer
+        
+        print(" Convert model to Traced-model... ") 
+        self.stride = model.stride
+        self.names = model.names
+        self.model = model
+
+        self.model = revert_sync_batchnorm(self.model)
+        # fuse multi time will cause invalid param value
+        # with torch.no_grad():
+        #     self.model = model.fuse() # make sure the model is fused
+        from pytorch_nndct.nn import QuantStub, DeQuantStub
+        from pytorch_nndct import QatProcessor
+        quant = QuantStub()
+=======
+    def __init__(self, model=None, device=None, img_size=(640,640), nndct_bitwidth=8, output_dir='nndct'): 
+        super(NNDctModel, self).__init__()
+        if not NNDCT_AVAILABLE:
+            raise ModuleNotFoundError("pytorch_nndct is not installed. Please install it to use NNDctModel.")
+        model = deepcopy(model)
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--quant_mode', default='calib', choices=['float', 'calib', 'test'], help='quant mode')
+        parser.add_argument('--dump_model', action='store_true', help='dump model')
+        opt, _ = parser.parse_known_args()
+        self.quant_mode = opt.quant_mode
+        self.dump_model = opt.dump_model
+        if self.dump_model:
+            if self.quant_mode != 'test':
+                raise ValueError
+        from models.yolo import Detect, IDetect, IAuxDetect, IKeypoint, IBin
+        
+        print(" Convert model to Traced-model... ") 
+        self.stride = model.stride
+        self.names = model.names
+        self.model = model
+
+        self.model = revert_sync_batchnorm(self.model)
+        # fuse multi time will cause invalid param value
+        # with torch.no_grad():
+        #     self.model = model.fuse() # make sure the model is fused
+        quant = QuantStub()
+>>>>>>> REPLACE
+```
+    
+
+
+```
+<<<<<<< SEARCH
+def get_qat_model(model, device=None, img_size=640, nndct_bitwidth=8, output_dir='nndct'):
+    from models.yolo import Detect, IDetect, IAuxDetect, IKeypoint, IBin
+    from pytorch_nndct.nn import QuantStub, DeQuantStub
+    from pytorch_nndct import QatProcessor
+=======
+def get_qat_model(model, device=None, img_size=640, nndct_bitwidth=8, output_dir='nndct'):
+    if not NNDCT_AVAILABLE:
+        raise ModuleNotFoundError("pytorch_nndct is not installed. Please install it to use get_qat_model.")
+    from models.yolo import Detect, IDetect, IAuxDetect, IKeypoint, IBin
+>>>>>>> REPLACE
+```
+
+-----------------ytorch_nndct 這個套件只會在您明確呼叫量化相關功能（如 test_nndct.py）時才會被要求，而不會在執行標準的 train.py 時觸發 ModuleNotFoundError------------------
+
+
+
+ models/common.py 這個檔案。它定義了 YOLOv7 使用的各種基礎神經網路層（如 Conv, Bottleneck 等）。其中一個模組直接導入了 pytorch_nndct，導致即使是標準訓練也會觸發這個錯誤。
+```
+<<<<<<< SEARCH
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.nn.modules.utils import _pair
+=======
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.nn.modules.utils import _pair
+
+try:
+    from pytorch_nndct.nn.modules import functional as nF
+    NNDCT_AVAILABLE = True
+except ImportError:
+    NNDCT_AVAILABLE = False
+>>>>>>> REPLACE
+```
+    
+
+
+```
+<<<<<<< SEARCH
+class Conv(nn.Module):
+    # Standard convolution
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super(Conv, self).__init__()
+        from pytorch_nndct.nn.modules import functional as nF
+        self.nndct_conv = nF.Conv2d(in_channels=c1,
+                                    out_channels=c2,
+                                    kernel_size=k,
+                                    stride=s,
+                                    padding=p,
+                                    groups=g,
+                                    bias=False)
+        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
+        self.bn = nn.BatchNorm2d(c2)
+        self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+=======
+class Conv(nn.Module):
+    # Standard convolution
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super(Conv, self).__init__()
+        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
+        self.bn = nn.BatchNorm2d(c2)
+        self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        if NNDCT_AVAILABLE:
+            self.nndct_conv = nF.Conv2d(in_channels=c1,
+                                        out_channels=c2,
+                                        kernel_size=k,
+                                        stride=s,
+                                        padding=p,
+                                        groups=g,
+                                        bias=False)
+>>>>>>> REPLACE
+```

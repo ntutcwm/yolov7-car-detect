@@ -1,0 +1,11 @@
+# Datasets
+/dataset/test/
+/dataset/train/
+/dataset/valid/
+
+# Caches
+*.cache
+
+# Runs
+/runs/
+/nndct/

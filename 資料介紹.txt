@@ -1,0 +1,88 @@
+1. train.py (根據上下文推斷)
+用途：這是模型訓練的核心腳本。您會使用它來訓練您的 YOLOv7 模型，無論是從頭開始訓練還是基於預訓練權重進行微調 (fine-tuning)。
+使用時機：當您準備好資料集並希望開始訓練一個新的物件偵測模型時，就會執行此腳本。
+核心功能：
+載入資料集 (--data)、模型設定檔 (--cfg) 和超參數 (--hyp)。
+可以選擇性地載入預訓練權重 (--weights) 來加速訓練並提升性能。
+執行訓練循環，包括前向傳播、計算損失、反向傳播和權重更新。
+定期在驗證集上評估模型性能，並儲存最佳的模型權重。
+支援多 GPU 訓練以加快訓練速度。
+2. detect.py
+用途：這是執行推論 (Inference) 的主要腳本，用於在單張圖片、影片或攝影機串流上執行物件偵測。
+使用時機：當您訓練好一個模型並想實際應用它來偵測物件時，就會使用此腳本。
+輸入：它需要一個訓練好的模型權重檔案 (--weights) 和一個輸入來源 (--source)，來源可以是圖片路徑、影片路徑或是攝影機編號。
+核心功能：
+載入模型並對輸入來源進行預處理。
+執行模型推論以獲得物件的邊界框 (bounding boxes)、類別和信賴度分數。
+可以將偵測結果視覺化，直接在圖片或影片上繪製邊界框，並將結果儲存或顯示出來。
+3. export.py
+用途：此腳本用於將訓練好的 PyTorch (.pt) 模型轉換為其他部署格式。
+使用時機：當您需要在非 PyTorch 環境中部署模型時，例如在行動裝置、網頁瀏覽器或使用特定推論引擎（如 TensorRT）的伺服器上。
+核心功能：
+ONNX：將模型轉換為 .onnx 格式，這是一種通用的模型交換格式，被許多推論引擎支援。
+TorchScript：將模型轉換為 TorchScript 格式 (.torchscript.pt)，這是一種可以在 C++ 環境中運行的 PyTorch 模型格式，適合伺服器端部署。
+CoreML：將模型轉換為 Apple 的 CoreML 格式 (.mlmodel)，用於在 iOS 和 macOS 應用中進行部署。
+提供多種選項來優化匯出的模型，例如 --simplify (簡化 ONNX 模型) 和 --fp16 (匯出為半精度浮點數以加速)。
+4. hubconf.py
+用途：此腳本是為了與 PyTorch Hub 整合而設計的。PyTorch Hub 是一個讓使用者可以輕鬆載入預訓練模型的平台。
+使用時機：當您想在自己的 Python 專案中，用一行程式碼就從 GitHub 上載入 YOLOv7 的預訓練模型時，就會用到它。例如：model = torch.hub.load('ultralytics/yolov7', 'yolov7')。
+核心功能：
+定義了幾個函式（如 yolov7、custom），這些函式是 PyTorch Hub 的進入點 (entry points)。
+處理模型的建立、預訓練權重的下載與載入，讓使用者可以非常方便地取得和使用模型，而不需要手動下載權重或建立模型架構。
+train.py
+
+用途：標準模型訓練。這是最主要的訓練腳本，用於從頭開始訓練或對標準的 YOLOv7 模型（如 YOLOv7、YOLOv7-tiny）進行微調。
+核心功能：處理標準的 P5 模型，這些模型通常在 640x640 的解析度下訓練。它包含了完整的訓練邏輯，如資料增強、優化器設定、學習率排程和模型儲存。
+train_aux.py
+
+用途：訓練帶有輔助頭 (Auxiliary Head) 的模型。這主要用於訓練更大、更深的模型，如 YOLOv7-W6、E6、D6 等。
+核心功能：與 train.py 非常相似，但它為具有輔助訓練頭的模型計算損失。這些輔助頭在訓練過程中提供額外的監督訊號，有助於訓練更深層的網路，但在推論時會被移除。它通常用於較高解析度（如 1280x1280）的 P6 模型。
+train_qat.py
+
+用途：量化感知訓練 (Quantization-Aware Training, QAT)。此腳本用於在訓練過程中模擬量化效應，以獲得一個對量化更穩健、精度更高的定點模型。
+核心功能：它整合了 Vitis-AI NNDCT 工具，在標準訓練流程中插入偽量化節點 (fake-quantization nodes)。這使得模型在訓練時就能「感知」到量化帶來的精度損失，並進行調整。最終產出的模型在轉換為 INT8 格式時，性能會比直接用 PTQ（訓練後量化）的模型要好。
+--------------------------
+
+評估腳本 (Evaluation Scripts)
+這些腳本用於在模型訓練後或轉換格式後，評估其性能。
+
+test.py
+
+用途：標準模型評估。用於評估標準 PyTorch (.pt) 模型的性能指標（mAP, Precision, Recall）。
+對應：通常與 train.py 和 train_aux.py 訓練出的模型配合使用。
+test_nndct.py
+
+用途：量化模型評估與轉換。用於 Vitis-AI 的後訓練量化（PTQ）流程，包括校準、評估量化後精度，以及匯出為部署用的 xmodel。
+對應：與 train_qat.py 配合，用於評估 QAT 模型的最終性能並匯出。
+test_onnx.py
+
+用途：ONNX 模型評估。用於驗證從 .pt 轉換來的 .onnx 模型是否正確，並評估其性能。
+推論與部署腳本 (Inference & Deployment Scripts)
+detect.py
+
+用途：執行即時偵測。用於在圖片、影片或攝影機上運行訓練好的模型，並將結果視覺化。這是驗證模型實際效果最直接的方式。
+export.py
+
+用途：模型格式轉換。將 PyTorch 的 .pt 模型轉換為多種部署格式，如 ONNX、TorchScript 和 CoreML，以適應不同平台的需求。
+hubconf.py
+
+用途：整合 PyTorch Hub。提供一個簡單的介面，讓使用者可以透過 torch.hub.load() 快速載入 YOLOv7 模型。
+完整工作流程總結
+選擇訓練腳本：
+
+訓練標準模型 (如 yolov7.yaml) -> 使用 train.py。
+訓練大型 P6 模型 (如 yolov7-w6.yaml) -> 使用 train_aux.py。
+目標是高效能的硬體部署 (FPGA) -> 使用 train_qat.py 進行量化感知訓練。
+評估與測試：
+
+訓練完成後，使用 test.py 評估標準模型的 mAP。
+使用 detect.py 在真實世界的影像上進行視覺測試。
+部署準備：
+
+通用部署 (TensorRT, etc.): 使用 export.py 將模型轉為 ONNX，再用 test_onnx.py 驗證。
+Vitis-AI 部署:
+若使用 QAT，模型已在 train_qat.py 中準備好，直接用 test_nndct.py 匯出。
+若使用 PTQ，則對標準模型使用 test_nndct.py 進行校準和量化。
+模型分享：
+
+hubconf.py 讓其他人可以輕鬆地透過 PyTorch Hub 使用你的模型。

@@ -1,0 +1,87 @@
+為您說明在獲得 .pt 檔案後的完整量化流程，並提供每一步的指令。
+
+這個流程主要分為兩個部分：後訓練量化 (Post-Training Quantization, PTQ) 和 量化感知訓練 (Quantization-Aware Training, QAT)。我將主要聚焦於您目前正在進行的 PTQ 流程。
+
+後訓練量化 (Post-Training Quantization, PTQ) 流程
+在您使用 train.py 成功訓練並獲得 best.pt 檔案後，根據 tutorial.ipynb 的指引，接下來的步驟如下：
+
+步驟 1：評估浮點模型 (Eval float model)
+這一步是為了建立一個性能基準，了解您的原始模型在量化前的準確度。
+
+指令 (tutorial.ipynb 第 49 行):
+python test_nndct.py \
+    --data data/albert_data.yaml \
+    --img 640 \
+    --batch 1 \
+    --conf 0.001 \
+    --iou 0.65 \
+    --device 0 \
+    --weights runs/train/yolov7_custom_training_b6_e504/weights/best.pt \
+    --name yolov7_640_val \
+    --quant_mode float
+
+bash
+
+
+步驟 2：執行校準 (Run calibration)
+這一步是量化的核心，它會分析模型並產生量化所需的參數。
+
+指令 (tutorial.ipynb 第 56 行):
+python test_nndct.py \
+    --data data/albert_data.yaml \
+    --img 640 \
+    --batch 1 \
+    --conf 0.001 \
+    --iou 0.65 \
+    --device 0 \
+    --weights runs/train/yolov7_custom_training_b6_e504/weights/best.pt \
+    --name yolov7_640_val \
+    --quant_mode calib \
+    --nndct_convert_sigmoid_to_hsigmoid \
+    --nndct_convert_silu_to_hswish
+
+bash
+
+
+步驟 3：評估量化後的模型 (Run eval)
+校準完成後，您需要測試量化後的模型，看看其準確度相較於浮點模型有多少變化。
+
+指令 (tutorial.ipynb 第 62 行):
+python test_nndct.py \
+    --data data/albert_data.yaml \
+    --img 640 \
+    --batch 1 \
+    --conf 0.001 \
+    --iou 0.65 \
+    --device 0 \
+    --weights runs/train/yolov7_custom_training_b6_e504/weights/best.pt \
+    --name yolov7_640_val \
+    --quant_mode test \
+    --nndct_convert_sigmoid_to_hsigmoid \
+    --nndct_convert_silu_to_hswish
+
+bash
+
+
+步驟 4：匯出最終模型 (Dump model)
+這是最後一步，將量化後的模型匯出為最終可以在硬體上部署的 .xmodel 檔案。
+
+指令 (tutorial.ipynb 第 68 行):
+python test_nndct.py \
+    --data data/albert_data.yaml \
+    --img 640 \
+    --batch 1 \
+    --conf 0.001 \
+    --iou 0.65 \
+    --device 0 \
+    --weights runs/train/yolov7_custom_training_b6_e504/weights/best.pt \
+    --name yolov7_640_val \
+    --quant_mode test \
+    --nndct_convert_sigmoid_to_hsigmoid \
+    --nndct_convert_silu_to_hswish \
+    --dump_model
+
+bash
+
+
+我已經將完整的流程和對應的指令都列出來了。

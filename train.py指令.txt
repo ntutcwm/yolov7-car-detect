@@ -1,0 +1,65 @@
+核心設定 (Core Settings)
+這些是啟動訓練最基本也最重要的參數。
+
+| 指令 (Argument) | 預設值 (Default) | 說明 (Description) |
+| :--- | :--- | :--- |
+| --weights | yolov7.pt | 初始權重路徑。設為 '' 則從頭開始訓練。 |
+| --cfg | '' | 模型架構設定檔的路徑 (例如 cfg/training/yolov7.yaml)。 |
+| --data | data/coco.yaml | 資料集設定檔的路徑 (例如 data/coco.yaml)。 |
+| --hyp | data/hyp.scratch.p5.yaml | 訓練超參數設定檔的路徑。 |
+
+訓練參數 (Training Parameters)
+這些參數直接控制訓練過程的行為。
+
+| 指令 (Argument) | 預設值 (Default) | 說明 (Description) |
+| :--- | :--- | :--- |
+| --epochs | 300 | 總共要訓練的週期 (epoch) 數量。 |
+| --batch-size | 16 | 所有 GPU 的總批次大小 (total batch size)。 |
+| --img-size | [640, 640] | [訓練圖片尺寸, 測試圖片尺寸]。 |
+| --rect | False | 使用矩形訓練，可加速處理非正方形圖片。 |
+| --resume | False | 從最新的 last.pt 恢復中斷的訓練。可指定權重路徑。 |
+| --nosave | False | 只儲存最終的權重檔案 (last.pt)。 |
+| --notest | False | 只在最後一個 epoch 結束後才進行測試。 |
+| --noautoanchor | False | 禁用自動錨點 (anchor) 檢查。 |
+| --evolve | False | 啟用超參數演化，會自動尋找最佳超參數。 |
+| --adam | False | 使用 Adam 優化器而非預設的 SGD。 |
+| --linear-lr | False | 使用線性學習率衰減策略，而非預設的餘弦退火。 |
+| --label-smoothing | 0.0 | 標籤平滑化 (Label smoothing) 的 epsilon 值。 |
+| --freeze | [0] | 凍結指定數量的模型層 (從頭開始)。例如 10 會凍結前 10 層。 |
+| --v5-metric | False | 使用 YOLOv5 的 AP 計算方式（假設最大召回率為 1.0）。 |
+
+資料與快取 (Data & Caching)
+與資料載入和處理效率相關的設定。
+
+| 指令 (Argument) | 預設值 (Default) | 說明 (Description) |
+| :--- | :--- | :--- |
+| --cache-images | False | 將圖片快取到記憶體中以加速訓練。 |
+| --image-weights | False | 使用加權的圖片取樣策略進行訓練。 |
+| --multi-scale | False | 在訓練時，將圖片尺寸在 +/- 50% 的範圍內隨機變動。 |
+| --single-cls | False | 將多類別資料集視為單一類別進行訓練。 |
+| --quad | False | 使用四合一資料載入器 (quad dataloader)，在低解析度下訓練時可加速。 |
+| --workers | 8 | 資料載入器 (dataloader) 使用的最大執行緒數量。 |
+
+儲存與日誌 (Saving & Logging)
+控制訓練結果和日誌的儲存位置與方式。
+
+| 指令 (Argument) | 預設值 (Default) | 說明 (Description) |
+| :--- | :--- | :--- |
+| --project | runs/train | 儲存訓練結果的專案目錄。 |
+| --name | exp | 該次訓練的實驗名稱，會儲存在 project/name 路徑下。 |
+| --exist-ok | False | 如果實驗名稱已存在，是否覆蓋，而不是自動遞增命名。 |
+| --bucket | '' | 用於上傳結果的 Google Cloud Storage (gsutil) 儲存桶名稱。 |
+| --entity | None | Weights & Biases (W&B) 的實體 (entity) 名稱。 |
+| --upload_dataset | False | 將資料集作為 W&B artifact 上傳。 |
+| --bbox_interval | -1 | 為 W&B 設定邊界框圖片日誌的間隔（每 N 個 epoch）。 |
+| --save_period | -1 | 每 N 個 epoch 儲存一次模型權重。-1 為禁用。 |
+| --artifact_alias | latest | 要使用的 W&B 資料集 artifact 的版本別名。 |
+
+分散式訓練 (Distributed Training)
+用於多 GPU 訓練的參數。
+
+| 指令 (Argument) | 預設值 (Default) | 說明 (Description) |
+| :--- | :--- | :--- |
+| --device | '' | 指定 CUDA 設備，例如 0 或 0,1,2,3 或 cpu。 |
+| --sync-bn | False | 使用同步批次正規化 (SyncBatchNorm)，僅在 DDP 模式下可用。 |
+| --local_rank | -1 | DDP 參數，請勿手動修改，由啟動器自動設定。 |

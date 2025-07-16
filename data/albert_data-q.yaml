@@ -1,0 +1,14 @@
+# Odessa dataset MTV2
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ./dataset/train-q.txt
+val: ./dataset/val-q.txt
+test: ./dataset/test-q.txt
+
+# MTV2 Tiny dataset
+# train: ./MTV2/MTV2_tiny.txt
+# val: ./MTV2/MTV2_tiny.txt
+# test: ./MTV2/MTV2_tiny.txt
+
+nc: 5
+names: ['bus', 'construction', 'cyclist', 'pedestrian', 'vehicle']

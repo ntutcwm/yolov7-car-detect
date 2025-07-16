@@ -1,0 +1,90 @@
+當您想要更新一個已經存在的映像檔（例如 va3-y7-official）時，您有兩種主要的方式：
+
+方法 1：使用不同的標籤 (Tag) 進行版本控制 (推薦)
+這是最標準、最推薦的做法。您為同一個映像檔名稱 (va3-y7-official) 賦予不同的標籤來區分版本，例如 v1.0, v2.0, latest 等。
+
+指令格式：docker commit <container_id> <repository_name>:<tag_name>
+
+範例：
+
+第一次提交：
+
+docker commit 47eadcf03e22 va3-y7-official:v1.0
+
+bash
+
+
+您也可以同時建立一個 latest 標籤指向這個最新版本：
+
+docker tag va3-y7-official:v1.0 va3-y7-official:latest
+
+bash
+
+
+下次您有了新的變更，想提交新版本時：
+假設新的容器 ID 是 abcdef123456。
+
+docker commit abcdef123456 va3-y7-official:v2.0
+
+bash
+
+
+然後，更新 latest 標籤以指向這個最新的 v2.0 版本：
+
+docker tag va3-y7-official:v2.0 va3-y7-official:latest
+
+bash
+
+
+優點：
+
+版本清晰：您可以清楚地看到 v1.0, v2.0 等所有歷史版本。
+易於回滾：如果新版本有問題，您可以輕易地回退到舊版本，例如 docker run ... va3-y7-official:v1.0。
+latest 標籤：latest 標籤提供了一個方便的方式來引用最新的穩定版本。
+方法 2：直接覆蓋 latest 標籤
+如果您不關心保留舊版本，只想一直使用最新的狀態，您可以重複使用同一個標籤（預設就是 latest）。
+
+指令格式：docker commit <container_id> <repository_name> (這會隱含地使用 :latest 標籤)
+
+範例：
+
+第一次提交：
+
+docker commit 47eadcf03e22 va3-y7-official
+
+bash
+
+
+這等同於 docker commit 47eadcf03e22 va3-y7-official:latest。
+
+下次提交新版本時：
+假設新的容器 ID 是 abcdef123456。
+
+docker commit abcdef123456 va3-y7-official
+
+bash
+
+
+這個指令會建立一個新的映像檔，並將 va3-y7-official:latest 這個標籤從舊的映像檔上移動到新的映像檔上。舊的映像檔會變成一個沒有標籤的「懸空映像檔」(dangling image)，但它仍然存在，直到您手動清理。
+
+優點：指令簡單。
+
+缺點：版本管理混亂，不容易找到或回退到舊版本。
+
+結論
+強烈建議您使用方法 1，即使用不同的標籤（如 :v1.0, :v2.0）來進行版本控制。這是一個更專業、更安全的做法。
+
+步驟 3：使用新的參數重新啟動容器
+現在，使用增加了 --shm-size 參數的新指令來啟動一個全新的容器。一個安全且推薦的大小是 8g（8 GB），這對於大多數機器學習任務都綽綽有餘。
+
+這是一個參考指令，您需要根據您最初啟動容器的方式來調整 -v (磁碟區掛載) 的部分，以確保您的程式碼能被正確掛載。
+
+# 這是一個範例指令，請務必確認您的磁碟區掛載路徑
+docker run -it --gpus all --shm-size=8g -v /path/to/your/host/yolov7:/workspace/y7 <your_image_name>
+
+bash
+
+
+--gpus all: 確保容器能使用 GPU。
+--shm-size=8g: 這是解決您問題的關鍵，將共享記憶體大小設定為 8GB。
+-v /path/to/your/host/yolov7:/workspace/y7: 請務必將 /path/to/your/host/yolov7 替換為您主機上專案的實際路徑。
