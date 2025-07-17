@@ -3,6 +3,7 @@
 /dataset/train/
 /dataset/valid/
 
+
 # Caches
 *.cache
 
@@ -13,6 +14,6 @@
 # Large files
 yolov7.pt
 dataset/tesi.v3i.yolov7pytorch.zip
-
+# Results
 /result/
 
